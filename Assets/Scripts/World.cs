@@ -1,12 +1,13 @@
 using UnityEngine;
 
+[System.Serializable]
 public class World : MonoBehaviour {
      public WorldSettings worldSettings;
      [Space]
-     HeightMapData landMassHeightMapData;
+     public HeightMapData landMassHeightMapData;
      [Range(0, 1)]
      public float landMassMultiplier;
-     HeightMapData detailHeightMapData;
+     public HeightMapData detailHeightMapData;
      float[,] worldHeightMap;
 
      public bool autoUpdate;

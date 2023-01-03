@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[System.Serializable]
 public struct HeightMapData {
      [HideInInspector]
      public float[,] heightMap;
