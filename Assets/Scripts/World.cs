@@ -17,6 +17,21 @@ public class World : MonoBehaviour {
      }
 
      public void GenerateHeightMaps() {
+          //Place World at Center
+          //transform.position = Vector3.zero;
+
+          //Initialize World Chunks Child Object
+          if (!transform.Find("WorldChunks")) {
+               GameObject child = new GameObject("WorldChunks");
+               child.transform.parent = transform;
+               //child.transform.position = transform.parent.position;
+               //child.transform.position = Vector3.zero;
+          }
+          //Destroy All Chunk Child Objects
+          while (transform.Find("WorldChunks").childCount > 0) {
+               DestroyImmediate(transform.Find("WorldChunks").GetChild(0).gameObject);
+          }
+
           //Calculate World Width and Height
           int worldWidth = (worldSettings.worldChunkWidth * worldSettings.chunkSize);
           int worldHeight = (worldSettings.worldChunkHeight * worldSettings.chunkSize);
@@ -33,26 +48,19 @@ public class World : MonoBehaviour {
                }
           }
 
-          //Destroy Child Objects
-          if (!transform.Find("WorldChunks")) {
-               GameObject child = new GameObject("WorldChunks");
-               child.transform.parent = transform;
-          } else {
-               while(transform.Find("WorldChunks").childCount > 0) {
-                    DestroyImmediate(transform.Find("WorldChunks").GetChild(0).gameObject);
-               }
-          }
-
           //Generate All Chunks
           int halfWidth = (worldSettings.worldChunkWidth - 1) / 2;
           int halfHeight = (worldSettings.worldChunkHeight - 1) / 2;
+          int halfChunk = worldSettings.chunkSize / 2;
           for(int y = -halfHeight; y <= halfHeight; y++) {
                for(int x = -halfWidth; x <= halfWidth; x++) {
-                    string coordString = "Chunk[" + x + "," + y + "]";
-                    GameObject chunk = new GameObject(coordString);
+                    //Create New Chunk
+                    GameObject chunk = new GameObject("Chunk[" + x + "," + y + "]");
+                    //Set Parent and Position
                     chunk.transform.parent = transform.Find("WorldChunks");
-                    chunk.AddComponent<WorldChunk>();
-                    chunk.GetComponent<WorldChunk>().GenerateChunk(new Vector2Int(x,y), worldSettings, worldHeightMap);
+                    chunk.transform.position = new Vector3(x * worldSettings.chunkSize, 0.0f, -y * worldSettings.chunkSize);
+                    //Add Chunk Component
+                    chunk.AddComponent<WorldChunk>().GenerateChunk(new Vector2Int(x, y), worldSettings, worldHeightMap);
                }
           }
      }
@@ -72,6 +80,10 @@ public class World : MonoBehaviour {
           [Space]
           public int seed;
           public Vector2Int offset;
+          [Space]
+          [Range(1, 100)]
+          public float heightMapMultiplier;
+          public AnimationCurve heightMapCurve;
 
           public void Randomize() {
                seed = Random.Range(int.MinValue, int.MaxValue);
