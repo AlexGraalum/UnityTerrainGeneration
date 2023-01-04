@@ -43,8 +43,9 @@ public class WorldChunk : MonoBehaviour{
           }
 
           //Create ChunkMesh and Texture
-          meshObject = new GameObject("Mesh", typeof(MeshFilter), typeof(MeshRenderer));
+          meshObject = new GameObject("Mesh", typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer));
           meshObject.GetComponent<MeshFilter>().sharedMesh = chunkMeshData.CreateMesh();
+          meshObject.GetComponent<MeshCollider>().sharedMesh = meshObject.GetComponent<MeshFilter>().sharedMesh;
           meshObject.GetComponent<MeshRenderer>().sharedMaterial = new Material(Resources.Load("Materials/LandMassMaterial", typeof(Material)) as Material);
           meshObject.GetComponent<MeshRenderer>().sharedMaterial.shader = Resources.Load("Shaders/LandMassShader", typeof(Shader)) as Shader;
           meshObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_MapTexture", Texture.TextureFromHeightMap(chunkHeightMap));

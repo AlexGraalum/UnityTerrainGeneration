@@ -6,7 +6,7 @@ public struct FalloffMap{
      public float innerRadius;
      [Range(0,1)]
      public float outerRadius;
-     public float scale;
+     //public float scale;
      [Space]
      public Vector2 offset;
      public AnimationCurve falloffFallOff;
@@ -14,19 +14,20 @@ public struct FalloffMap{
 
      public void GenerateMap(int width, int height) {
           heightMap = new float[width, height];
+
+          float minSize = width < height ? width / 2.0f : height / 2.0f;
           for (int y = 0; y < height; y++) {
                for(int x = 0; x < width; x++) {
-                    float d = Vector2.Distance(new Vector2(x,y), offset);
-                    if (d > (outerRadius * scale)) {
+
+                    Vector2 center = new Vector2(width/2.0f, height/2.0f);
+                    float d = Vector2.Distance(new Vector2(x,y), center + offset);
+                    if (d > (outerRadius * minSize)) {
                          heightMap[x, y] = 0.0f;
-                    } else if (d < (innerRadius * scale)) {
+                    } else if (d < (innerRadius * minSize)) {
                          heightMap[x, y] = 1.0f;
                     } else {
-                         float val = (d - (outerRadius * scale)) / ((innerRadius - outerRadius) * scale);
+                         float val = (d - (outerRadius * minSize)) / ((innerRadius - outerRadius) * minSize);
                          heightMap[x, y] = falloffFallOff.Evaluate(val);
-                         //heightMap[x, y] = Mathf.Lerp(outerRadius * scale, innerRadius * scale, d / scale);
-                         //heightMap[x, y] = (d - (outerRadius * scale)) / ((innerRadius * scale) - d / scale);
-                         //heightMap[x, y] = 0.5f;
                     }
                }
           }

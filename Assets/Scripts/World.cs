@@ -17,7 +17,7 @@ public class World : MonoBehaviour {
 
      private void OnValidate() {
           worldSettings.Validate();
-          falloffMap.Validate();
+          if (useFalloffMap) falloffMap.Validate();
      }
 
      public void GenerateHeightMaps() {
@@ -52,12 +52,11 @@ public class World : MonoBehaviour {
           for(int y = 0; y < worldHeight; y++) {
                for(int x = 0; x < worldWidth; x++) {
                     if (useFalloffMap) {
-                         worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] - detailHeightMapData.heightMap[x,y]) * falloffMap.heightMap[x, y];
+                         //worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] - detailHeightMapData.heightMap[x,y]) * falloffMap.heightMap[x, y];
+                         worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] * falloffMap.heightMap[x, y]) - detailHeightMapData.heightMap[x,y];
                     } else {
                          worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] - detailHeightMapData.heightMap[x,y]);
                     }
-                    //worldHeightMap[x, y] -= detailHeightMapData.heightMap[x, y];
-                    //worldHeightMap[x, y] *= landMassMultiplier;
                }
           }
 
