@@ -8,17 +8,21 @@ public class World : MonoBehaviour {
      [Range(0, 1)]
      public float landMassMultiplier;
      public HeightMapData detailHeightMapData;
+     [Space]
+     public FalloffMap falloffMap;
+     public bool useFalloffMap;
      float[,] worldHeightMap;
 
      public bool autoUpdate;
 
      private void OnValidate() {
           worldSettings.Validate();
+          falloffMap.Validate();
      }
 
      public void GenerateHeightMaps() {
           //Place World at Center
-          //transform.position = Vector3.zero;
+          transform.position = Vector3.zero;
 
           //Initialize World Chunks Child Object
           if (!transform.Find("WorldChunks")) {
@@ -33,25 +37,34 @@ public class World : MonoBehaviour {
           }
 
           //Calculate World Width and Height
-          int worldWidth = (worldSettings.worldChunkWidth * worldSettings.chunkSize);
-          int worldHeight = (worldSettings.worldChunkHeight * worldSettings.chunkSize);
+          int worldWidth = (worldSettings.worldChunkWidth * (worldSettings.chunkSize + 1));
+          int worldHeight = (worldSettings.worldChunkHeight * (worldSettings.chunkSize + 1));
 
           //Generate Landmass and Detail Heightmaps
           landMassHeightMapData.GenerateHeightMap(worldWidth, worldHeight, worldSettings.seed, landMassHeightMapData.offset);
           detailHeightMapData.GenerateHeightMap(worldWidth, worldHeight, worldSettings.seed, detailHeightMapData.offset);
 
+          //Generate Falloff Map
+          if(useFalloffMap) falloffMap.GenerateMap(worldWidth, worldHeight);
+
           //Compile Landmass and Detail into World Heightmap
           worldHeightMap = new float[worldWidth, worldHeight];
           for(int y = 0; y < worldHeight; y++) {
                for(int x = 0; x < worldWidth; x++) {
-                    worldHeightMap[x, y] = (detailHeightMapData.heightMap[x, y] - (landMassHeightMapData.heightMap[x,y] * landMassMultiplier)) ;
+                    if (useFalloffMap) {
+                         worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] - detailHeightMapData.heightMap[x,y]) * falloffMap.heightMap[x, y];
+                    } else {
+                         worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] - detailHeightMapData.heightMap[x,y]);
+                    }
+                    //worldHeightMap[x, y] -= detailHeightMapData.heightMap[x, y];
+                    //worldHeightMap[x, y] *= landMassMultiplier;
                }
           }
 
           //Generate All Chunks
           int halfWidth = (worldSettings.worldChunkWidth - 1) / 2;
           int halfHeight = (worldSettings.worldChunkHeight - 1) / 2;
-          int halfChunk = worldSettings.chunkSize / 2;
+          //int halfChunk = worldSettings.chunkSize / 2;
           for(int y = -halfHeight; y <= halfHeight; y++) {
                for(int x = -halfWidth; x <= halfWidth; x++) {
                     //Create New Chunk
@@ -67,6 +80,8 @@ public class World : MonoBehaviour {
 
      public void Randomize() {
           worldSettings.Randomize();
+          landMassHeightMapData.Randomize();
+          detailHeightMapData.Randomize();
      }
 
      [System.Serializable]

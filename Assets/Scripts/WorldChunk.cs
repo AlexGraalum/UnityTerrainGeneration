@@ -12,8 +12,8 @@ public class WorldChunk : MonoBehaviour{
      public void GenerateChunk(Vector2Int coord, World.WorldSettings worldSettings, float[,] worldHeightMap) {
           //Initialize
           this.coord = coord;
-          chunkHeightMap = new float[worldSettings.chunkSize, worldSettings.chunkSize];
-          chunkMeshData = new ChunkMeshData(worldSettings.chunkSize);
+          chunkHeightMap = new float[worldSettings.chunkSize + 1, worldSettings.chunkSize + 1];
+          chunkMeshData = new ChunkMeshData(worldSettings.chunkSize + 1);
 
           //Get Chunk Offset
           int chunkOffsetX = (coord.x + (int)(worldSettings.worldChunkWidth/ 2.0f)) * worldSettings.chunkSize;
@@ -23,20 +23,21 @@ public class WorldChunk : MonoBehaviour{
           float topX = (worldSettings.chunkSize - 1) / -2.0f;
           float topZ = (worldSettings.chunkSize - 1) / 2.0f;
 
-          //Generate Chunk Heightmap
-          for (int y = 0; y < worldSettings.chunkSize; y++) {
-               for (int x = 0; x < worldSettings.chunkSize; x++) {
+          //Generate Chunk Heightmap and Mesh
+          for (int y = 0; y <= worldSettings.chunkSize; y++) {
+               for (int x = 0; x <= worldSettings.chunkSize; x++) {
 
                     chunkHeightMap[x, y] = worldHeightMap[x + chunkOffsetX, y + chunkOffsetY];
+
+                    int i = (y * (worldSettings.chunkSize + 1)) + x;
                     float h = worldSettings.heightMapCurve.Evaluate(chunkHeightMap[x, y]) * worldSettings.heightMapMultiplier;
 
-                    int i = (y * worldSettings.chunkSize) + x;
                     chunkMeshData.vertices[i] = new Vector3(topX + x, h, topZ - y);
-                    chunkMeshData.uvs[i] = new Vector2(x / (float)worldSettings.chunkSize, y / (float)worldSettings.chunkSize);
+                    chunkMeshData.uvs[i] = new Vector2(x / (float)(worldSettings.chunkSize + 1), y / (float)(worldSettings.chunkSize + 1));
 
-                    if(x < worldSettings.chunkSize - 1 && y < worldSettings.chunkSize - 1) {
-                         chunkMeshData.AddTriangle(i, i + worldSettings.chunkSize + 1, i + worldSettings.chunkSize);
-                         chunkMeshData.AddTriangle(i + worldSettings.chunkSize + 1, i, i + 1);
+                    if (x < worldSettings.chunkSize && y < worldSettings.chunkSize) {
+                         chunkMeshData.AddTriangle(i, i + worldSettings.chunkSize + 2, i + worldSettings.chunkSize + 1);
+                         chunkMeshData.AddTriangle(i + worldSettings.chunkSize + 2, i, i + 1);
                     }
                }
           }
@@ -62,7 +63,7 @@ public class WorldChunk : MonoBehaviour{
 
           public ChunkMeshData(int chunkSize) {
                vertices = new Vector3[chunkSize * chunkSize];
-               triangles = new int[(chunkSize - 1) * (chunkSize - 1) * 6];
+               triangles = new int[(chunkSize - 0) * (chunkSize - 0) * 6];
                uvs = new Vector2[chunkSize * chunkSize];
           }
 

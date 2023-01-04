@@ -18,6 +18,7 @@ public class World_Editor : Editor{
 
           if (GUILayout.Button("Randomize")) {
                world.Randomize();
+               if (world.autoUpdate) world.GenerateHeightMaps();
           }
      }
 }
