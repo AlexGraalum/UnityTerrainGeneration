@@ -41,12 +41,6 @@ public class PlayerController : MonoBehaviour {
           float horizontalMove = Input.GetAxis("Horizontal");
           float verticalMove = Input.GetAxis("Vertical");
 
-          //if (Input.GetKeyDown(KeyCode.Space) && characterController.isGrounded) {
-          //     GetComponent<Rigidbody>().AddForce(Vector2.up * jumpForce, ForceMode.Impulse);
-          //} else {
-          //     vSpeed -= characterController.isGrounded ? 0.0f : gravity * Time.deltaTime;
-          //}
-
           vSpeed += characterController.isGrounded ? Input.GetKeyDown(KeyCode.Space) ? jumpForce : 0.0f : -gravity * Time.deltaTime;
 
           Vector3 gravMove = new Vector3(0.0f, vSpeed, 0.0f);

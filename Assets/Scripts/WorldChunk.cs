@@ -3,16 +3,26 @@ using UnityEngine;
 [System.Serializable]
 public class WorldChunk : MonoBehaviour{
      public float[,] chunkHeightMap;
+     public float[,] chunkBiomeHeightMap;
+     
+     public Color[] chunkBiomeMap;
+     public Color[] chunkColorMap;
 
      ChunkMeshData chunkMeshData;
      GameObject meshObject;
 
      public Vector2 coord;
 
-     public void GenerateChunk(Vector2Int coord, World.WorldSettings worldSettings, float[,] worldHeightMap) {
+     public void GenerateChunk(Vector2Int coord, World.WorldSettings worldSettings, float[,] worldHeightMap, float[,] worldBiomeHeightMap, BiomeData biomeData) {
           //Initialize
           this.coord = coord;
+
           chunkHeightMap = new float[worldSettings.chunkSize + 1, worldSettings.chunkSize + 1];
+          chunkBiomeHeightMap = new float[worldSettings.chunkSize + 1, worldSettings.chunkSize + 1];
+
+          chunkBiomeMap = new Color[(worldSettings.chunkSize + 1) * (worldSettings.chunkSize + 1)];
+          chunkColorMap = new Color[(worldSettings.chunkSize + 1) * (worldSettings.chunkSize + 1)];
+
           chunkMeshData = new ChunkMeshData(worldSettings.chunkSize + 1);
 
           //Get Chunk Offset
@@ -25,11 +35,16 @@ public class WorldChunk : MonoBehaviour{
 
           //Generate Chunk Heightmap and Mesh
           for (int y = 0; y <= worldSettings.chunkSize; y++) {
-               for (int x = 0; x <= worldSettings.chunkSize; x++) {
+               int offsetY = y + chunkOffsetY;
 
-                    chunkHeightMap[x, y] = worldHeightMap[x + chunkOffsetX, y + chunkOffsetY];
+               for (int x = 0; x <= worldSettings.chunkSize; x++) {
+                    int offsetX = x + chunkOffsetX;
+
+                    chunkHeightMap[x, y] = worldHeightMap[offsetX, offsetY];
+                    chunkBiomeHeightMap[x, y] = worldBiomeHeightMap[offsetX, offsetY];
 
                     int i = (y * (worldSettings.chunkSize + 1)) + x;
+
                     float h = worldSettings.heightMapCurve.Evaluate(chunkHeightMap[x, y]) * worldSettings.heightMapMultiplier;
 
                     chunkMeshData.vertices[i] = new Vector3(topX + x, h, topZ - y);
@@ -42,16 +57,61 @@ public class WorldChunk : MonoBehaviour{
                }
           }
 
+          chunkBiomeMap = biomeData.GenerateBiomeMap(worldSettings.chunkSize + 1, worldSettings.chunkSize + 1, chunkBiomeHeightMap);
+          GenerateColorMap(worldSettings, biomeData);
+
           //Create ChunkMesh and Texture
           meshObject = new GameObject("Mesh", typeof(MeshFilter), typeof(MeshCollider), typeof(MeshRenderer));
+
           meshObject.GetComponent<MeshFilter>().sharedMesh = chunkMeshData.CreateMesh();
           meshObject.GetComponent<MeshCollider>().sharedMesh = meshObject.GetComponent<MeshFilter>().sharedMesh;
+
           meshObject.GetComponent<MeshRenderer>().sharedMaterial = new Material(Resources.Load("Materials/LandMassMaterial", typeof(Material)) as Material);
           meshObject.GetComponent<MeshRenderer>().sharedMaterial.shader = Resources.Load("Shaders/LandMassShader", typeof(Shader)) as Shader;
-          meshObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_MapTexture", Texture.TextureFromHeightMap(chunkHeightMap));
+
+          //Draw Selected Texture
+          switch (worldSettings.drawMode) {
+               case World.DrawMode.HeightMap:
+                    meshObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_MapTexture", Texture.TextureFromHeightMap(chunkHeightMap));
+                    break;
+               case World.DrawMode.BiomeHeightMap:
+                    meshObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_MapTexture", Texture.TextureFromHeightMap(chunkBiomeHeightMap));
+                    break;
+               case World.DrawMode.BiomeMap:
+                    meshObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_MapTexture", Texture.TextureFromColorMap(chunkBiomeMap, worldSettings.chunkSize + 1));
+                    break;
+               case World.DrawMode.ColorMap:
+                    meshObject.GetComponent<MeshRenderer>().sharedMaterial.SetTexture("_MapTexture", Texture.TextureFromColorMap(chunkColorMap, worldSettings.chunkSize + 1));
+                    break;
+          }
+
+          //Set Transform and Parent
           meshObject.transform.SetPositionAndRotation(transform.position, transform.rotation);
           meshObject.transform.parent = transform;
-          
+     }
+
+     private void GenerateColorMap(World.WorldSettings worldSettings, BiomeData biomeData) {
+          for (int y = 0; y <= worldSettings.chunkSize; y++) {
+               for(int x = 0; x <= worldSettings.chunkSize; x++) {
+                    float currHeight = chunkHeightMap[x, y];
+
+                    if (currHeight == 0.0f) {
+                         chunkColorMap[y * (worldSettings.chunkSize + 1) + x] = Color.blue;
+                    } else {
+                         foreach(BiomeData.Biome b in biomeData.biomes) {
+                              if(chunkBiomeMap[y * (worldSettings.chunkSize + 1) + x] == b.biomeColor) {
+                                   foreach(BiomeData.TerrainType r in b.biomeRegions) {
+                                        if(r.terrainHeight <= currHeight) {
+                                             chunkColorMap[y * (worldSettings.chunkSize + 1) + x] = r.terrainColor;
+                                        } else {
+                                             break;
+                                        }
+                                   }
+                              }
+                         }
+                    }
+               }
+          }
      }
 
      [System.Serializable]

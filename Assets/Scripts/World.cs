@@ -2,6 +2,8 @@ using UnityEngine;
 
 [System.Serializable]
 public class World : MonoBehaviour {
+     public enum DrawMode {HeightMap, BiomeHeightMap, BiomeMap, ColorMap};
+
      public WorldSettings worldSettings;
      [Space]
      public HeightMapData landMassHeightMapData;
@@ -12,11 +14,14 @@ public class World : MonoBehaviour {
      public FalloffMap falloffMap;
      public bool useFalloffMap;
      float[,] worldHeightMap;
+     [Space]
+     public HeightMapData biomeHeightMapData;
 
      public bool autoUpdate;
 
      private void OnValidate() {
           worldSettings.Validate();
+          transform.Find("BiomeData").GetComponent<BiomeData>().Validate();
           if (useFalloffMap) falloffMap.Validate();
      }
 
@@ -28,8 +33,6 @@ public class World : MonoBehaviour {
           if (!transform.Find("WorldChunks")) {
                GameObject child = new GameObject("WorldChunks");
                child.transform.parent = transform;
-               //child.transform.position = transform.parent.position;
-               //child.transform.position = Vector3.zero;
           }
           //Destroy All Chunk Child Objects
           while (transform.Find("WorldChunks").childCount > 0) {
@@ -47,18 +50,25 @@ public class World : MonoBehaviour {
           //Generate Falloff Map
           if(useFalloffMap) falloffMap.GenerateMap(worldWidth, worldHeight);
 
+          //Generate Biome Heightmap
+          biomeHeightMapData.GenerateHeightMap(worldWidth, worldHeight, worldSettings.seed, biomeHeightMapData.offset);
+
           //Compile Landmass and Detail into World Heightmap
           worldHeightMap = new float[worldWidth, worldHeight];
           for(int y = 0; y < worldHeight; y++) {
                for(int x = 0; x < worldWidth; x++) {
+                    worldHeightMap[x, y] = landMassHeightMapData.heightMap[x, y];
+
                     if (useFalloffMap) {
-                         //worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] - detailHeightMapData.heightMap[x,y]) * falloffMap.heightMap[x, y];
-                         worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] * falloffMap.heightMap[x, y]) - detailHeightMapData.heightMap[x,y];
-                    } else {
-                         worldHeightMap[x, y] = (landMassHeightMapData.heightMap[x, y] - detailHeightMapData.heightMap[x,y]);
+                         worldHeightMap[x, y] *= falloffMap.heightMap[x, y];
+                         biomeHeightMapData.heightMap[x, y] *= falloffMap.heightMap[x, y];
                     }
+
+                    worldHeightMap[x, y] -= detailHeightMapData.heightMap[x, y];
                }
           }
+
+          //transform.Find("BiomeData").GetComponent<BiomeData>().GenerateBiomeMap(worldWidth, worldHeight, biomeHeightMapData.heightMap);
 
           //Generate All Chunks
           int halfWidth = (worldSettings.worldChunkWidth - 1) / 2;
@@ -72,7 +82,7 @@ public class World : MonoBehaviour {
                     chunk.transform.parent = transform.Find("WorldChunks");
                     chunk.transform.position = new Vector3(x * worldSettings.chunkSize, 0.0f, -y * worldSettings.chunkSize);
                     //Add Chunk Component
-                    chunk.AddComponent<WorldChunk>().GenerateChunk(new Vector2Int(x, y), worldSettings, worldHeightMap);
+                    chunk.AddComponent<WorldChunk>().GenerateChunk(new Vector2Int(x, y), worldSettings, worldHeightMap, biomeHeightMapData.heightMap, transform.Find("BiomeData").GetComponent<BiomeData>());
                }
           }
      }
@@ -85,6 +95,7 @@ public class World : MonoBehaviour {
 
      [System.Serializable]
      public struct WorldSettings {
+          public DrawMode drawMode;
           [Range(1, 32)]
           public int worldChunkWidth;
           [Range(1, 32)]
