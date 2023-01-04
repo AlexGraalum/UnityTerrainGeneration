@@ -11,11 +11,12 @@ public class BiomeData : MonoBehaviour {
      }
 
      public void Validate() {
+          biomes[0].biomeHeight = 0.0f;
+
           for(int i = 1; i < biomes.Length; i++) {
                if (biomes[i].biomeHeight < biomes[i - 1].biomeHeight)
                     biomes[i].biomeHeight = biomes[i - 1].biomeHeight;
           }
-
 
           foreach(Biome biome in biomes) {
                for(int i = 1; i < biome.biomeRegions.Length; i++) {
@@ -31,7 +32,6 @@ public class BiomeData : MonoBehaviour {
           for(int y = 0; y < height; y++) {
                for(int x = 0; x < width; x++) {
                     for(int i = 0; i < biomes.Length; i++) {
-                         //if (biomes[i].biomeHeight <= heightMap[x,y])
                          if (heightMap[x,y] > biomes[i].biomeHeight)
                               biomeMap[y * height + x] = biomes[i].biomeColor;
                     }

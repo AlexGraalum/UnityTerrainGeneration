@@ -41,7 +41,7 @@ public class WorldChunk : MonoBehaviour{
                     int offsetX = x + chunkOffsetX;
 
                     chunkHeightMap[x, y] = worldHeightMap[offsetX, offsetY];
-                    chunkBiomeHeightMap[x, y] = worldBiomeHeightMap[offsetX, offsetY];
+                    if(chunkHeightMap[x,y] > 0.0f) chunkBiomeHeightMap[x, y] = worldBiomeHeightMap[offsetX, offsetY];
 
                     int i = (y * (worldSettings.chunkSize + 1)) + x;
 
@@ -94,6 +94,7 @@ public class WorldChunk : MonoBehaviour{
           for (int y = 0; y <= worldSettings.chunkSize; y++) {
                for(int x = 0; x <= worldSettings.chunkSize; x++) {
                     float currHeight = chunkHeightMap[x, y];
+                    float currBiomeHeight = chunkBiomeHeightMap[x, y];
 
                     if (currHeight == 0.0f) {
                          chunkColorMap[y * (worldSettings.chunkSize + 1) + x] = Color.blue;
